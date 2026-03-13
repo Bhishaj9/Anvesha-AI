@@ -1,8 +1,8 @@
 ---
 title: Anvesha AI
-emoji: 🇮🇳
-colorFrom: orange
-colorTo: green
+emoji: ⚡
+colorFrom: yellow
+colorTo: purple
 sdk: docker
 pinned: false
 ---
