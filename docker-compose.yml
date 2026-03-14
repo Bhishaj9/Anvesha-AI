@@ -36,8 +36,7 @@ services:
       - SEARXNG_BASE_URL=http://searxng:8080
       - FRONTEND_URL=http://frontend:3000
     depends_on:
-      searxng:
-        condition: service_healthy
+      - searxng
     restart: unless-stopped
     networks:
       - anvesha-net
