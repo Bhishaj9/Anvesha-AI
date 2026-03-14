@@ -13,7 +13,7 @@ COPY . .
 EXPOSE 8000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=15s --start-period=60s --retries=5 \
   CMD python -c "import httpx; httpx.get('http://localhost:8000/')" || exit 1
 
 # Run with gunicorn
