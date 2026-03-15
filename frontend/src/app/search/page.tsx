@@ -135,7 +135,7 @@ export default function SearchPage() {
             <div className="flex flex-col items-center gap-6 py-20">
               <div className="h-12 w-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
               <p className="text-charcoal/50 text-sm font-medium">
-                Searching the sutras...
+                Searching the sutras &amp; Synthesizing Knowledge...
               </p>
             </div>
           )}

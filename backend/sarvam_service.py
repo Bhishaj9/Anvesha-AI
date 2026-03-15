@@ -10,6 +10,7 @@ TTS         (Bulbul V3):    Text-to-speech for audio output.
 import base64
 import json
 import logging
+import re
 import httpx
 from openai import AsyncOpenAI
 from config import get_settings
@@ -89,7 +90,8 @@ async def route_query(user_query: str) -> list[str]:
             max_tokens=512,
         )
 
-        raw = response.choices[0].message.content.strip()
+        content = response.choices[0].message.content
+        raw = content.strip() if content else ""
         logger.info(f"Router raw response: {raw}")
 
         # Parse JSON array — handle markdown code fences if present
@@ -102,7 +104,20 @@ async def route_query(user_query: str) -> list[str]:
                 if not line.strip().startswith("```")
             )
 
-        queries = json.loads(cleaned)
+        try:
+            queries = json.loads(cleaned)
+        except json.JSONDecodeError:
+            # Fallback regex extraction
+            match = re.search(r'\[.*\]', cleaned, re.DOTALL)
+            if match:
+                try:
+                    queries = json.loads(match.group(0))
+                except json.JSONDecodeError as e:
+                    logger.error(f"Router regex fallback JSON parse error: {e}. Raw: {raw}")
+                    return [user_query]
+            else:
+                logger.error(f"Router could not extract JSON from raw: {raw}")
+                return [user_query]
 
         if not isinstance(queries, list) or not all(isinstance(q, str) for q in queries):
             raise ValueError(f"Expected a JSON array of strings, got: {type(queries)}")
@@ -110,10 +125,6 @@ async def route_query(user_query: str) -> list[str]:
         # Clamp to 3-5 queries
         return queries[:5] if len(queries) > 5 else queries
 
-    except json.JSONDecodeError as e:
-        logger.error(f"Router JSON parse error: {e}. Raw: {raw}")
-        # Fallback: return the original query so search still works
-        return [user_query]
     except Exception as e:
         logger.error(f"Router error: {e}")
         # Graceful degradation — use original query
@@ -229,10 +240,11 @@ async def synthesize_response(
                 },
             ],
             temperature=0.4,
-            max_tokens=2048,
+            max_tokens=4096,
         )
 
-        raw = response.choices[0].message.content.strip()
+        content = response.choices[0].message.content
+        raw = content.strip() if content else ""
         logger.info(f"Synthesizer raw response length: {len(raw)} chars")
 
         # Parse JSON — handle markdown code fences
@@ -244,7 +256,17 @@ async def synthesize_response(
                 if not line.strip().startswith("```")
             )
 
-        result = json.loads(cleaned)
+        try:
+            result = json.loads(cleaned)
+        except json.JSONDecodeError:
+            match = re.search(r'\{.*\}', cleaned, re.DOTALL)
+            if match:
+                try:
+                    result = json.loads(match.group(0))
+                except json.JSONDecodeError:
+                    result = {"summary": raw, "citations": []}
+            else:
+                result = {"summary": raw, "citations": []}
 
         # Validate structure
         if "summary" not in result:
@@ -254,21 +276,6 @@ async def synthesize_response(
 
         return result
 
-    except json.JSONDecodeError as e:
-        logger.error(f"Synthesizer JSON parse error: {e}")
-        # Return raw text as summary with basic citations
-        return {
-            "summary": raw if 'raw' in dir() else "Failed to generate response.",
-            "citations": [
-                {
-                    "index": i + 1,
-                    "title": r.get("title", ""),
-                    "url": r.get("url", ""),
-                    "is_gov": ".gov.in" in r.get("url", ""),
-                }
-                for i, r in enumerate(sorted_results[:10])
-            ],
-        }
     except Exception as e:
         logger.error(f"Synthesizer error: {e}")
         return {

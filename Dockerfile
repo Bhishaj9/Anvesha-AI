@@ -46,8 +46,8 @@ COPY --from=frontend-builder /app/.next/standalone /app/frontend/
 COPY --from=frontend-builder /app/.next/static /app/frontend/.next/static
 
 # Copy SearxNG Settings
-RUN mkdir -p /etc/searxng
-COPY searxng/settings.yml /etc/searxng/settings.yml
+RUN mkdir -p /app/searxng
+COPY searxng/settings.yml /app/searxng/settings.yml
 
 # Copy Supervisord Configuration
 COPY supervisord.conf /app/supervisord.conf
@@ -56,13 +56,13 @@ COPY supervisord.conf /app/supervisord.conf
 # Create required directories for supervisor
 RUN mkdir -p /var/log/supervisor /var/run /app/searxng-data \
     && useradd -m -u 1000 hfuser \
-    && chown -R 1000:1000 /app /etc/searxng /var/log/supervisor /var/run /usr/local/searxng /app/searxng-data \
-    && chmod -R 777 /app /etc/searxng /var/log/supervisor /var/run /usr/local/searxng /app/searxng-data
+    && chown -R 1000:1000 /app /var/log/supervisor /var/run /usr/local/searxng /app/searxng-data \
+    && chmod -R 777 /app /var/log/supervisor /var/run /usr/local/searxng /app/searxng-data
 
 USER 1000
 
 # Set Environment Variables
-ENV SEARXNG_SETTINGS_PATH=/etc/searxng/settings.yml
+ENV SEARXNG_SETTINGS_PATH=/app/searxng/settings.yml
 ENV SEARXNG_BASE_URL=http://localhost:8888/
 ENV BACKEND_URL=http://localhost:8000
 ENV PORT=3000
