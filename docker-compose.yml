@@ -30,9 +30,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
-    env_file:
-      - ./backend/.env
     environment:
+      - SARVAM_API_KEY=${SARVAM_API_KEY}
       - SEARXNG_BASE_URL=http://searxng:8080
       - FRONTEND_URL=http://frontend:3000
     depends_on:
