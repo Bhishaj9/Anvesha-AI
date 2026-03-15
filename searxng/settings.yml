@@ -12,6 +12,8 @@ search:
   default_region: "in-en"
 
 server:
+  port: 8888
+  bind_address: "0.0.0.0"
   secret_key: "anvesha_secret_key_12345"
 
 outgoing:

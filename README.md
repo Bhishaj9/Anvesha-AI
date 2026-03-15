@@ -4,7 +4,6 @@ emoji: ⚡
 colorFrom: yellow
 colorTo: purple
 sdk: docker
-app_file: frontend/Dockerfile
 app_port: 3000
 pinned: false
 ---
