@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import SearchSidebar from "@/components/SearchSidebar";
 import SearchBar from "@/components/SearchBar";
 import SuggestionPills from "@/components/SuggestionPills";
@@ -16,9 +16,11 @@ interface SearchResult {
 interface SearchResponse {
   summary?: string;
   citations?: any[];
+  follow_ups?: string[];
   sutra?: {
     summary: string;
     citations: any[];
+    follow_ups?: string[];
   };
   raw_results?: SearchResult[];
   results?: SearchResult[]; // fallback
@@ -28,27 +30,52 @@ interface SearchResponse {
 export default function SearchPage() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [followUps, setFollowUps] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [resultCount, setResultCount] = useState(0);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Audio state
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const handleSearch = useCallback(async (query: string) => {
+    // Cancel any ongoing search
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     setIsLoading(true);
     setError(null);
     setHasSearched(true);
     setAiSummary(null);
+    setFollowUps([]);
+    
+    // Stop any playing audio when a new search starts
+    if (isPlaying && audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      setIsPlaying(false);
+    }
 
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`, {
+        signal: abortController.signal
+      });
       const data: SearchResponse = await res.json();
 
       if (data.error) {
         setError(data.error);
         setResults([]);
         setAiSummary(null);
+        setFollowUps([]);
         setResultCount(0);
       } else {
         const searchResults = data.raw_results || data.results || [];
@@ -56,12 +83,17 @@ export default function SearchPage() {
         
         let rawSummary = data.summary || data.sutra?.summary || null;
         let parsedSummary = rawSummary;
+        let parsedFollowUps = data.follow_ups || data.sutra?.follow_ups || [];
+        
         if (rawSummary) {
           try {
             // If the backend returned a JSON string in summary, parse it
             const parsed = JSON.parse(rawSummary);
             if (parsed && parsed.summary) {
               parsedSummary = parsed.summary;
+            }
+            if (parsed && parsed.follow_ups) {
+              parsedFollowUps = parsed.follow_ups;
             }
           } catch (e) {
             // It's a standard string, keep it as is
@@ -70,18 +102,79 @@ export default function SearchPage() {
         }
         
         setAiSummary(parsedSummary);
+        setFollowUps(parsedFollowUps);
         setResultCount(searchResults.length);
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        console.log("Search aborted");
+        return;
+      }
       setError("Failed to connect to the search service. Please try again.");
       setResults([]);
       setAiSummary(null);
+      setFollowUps([]);
       setResultCount(0);
       console.error("Search error:", err);
     } finally {
+      if (abortControllerRef.current === abortController) {
+        setIsLoading(false);
+      }
+    }
+  }, [isPlaying]);
+
+  const handleStopSearch = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
       setIsLoading(false);
     }
   }, []);
+
+  const handleListen = async () => {
+    if (!aiSummary) return;
+
+    if (isPlaying && audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      setIsPlaying(false);
+      return;
+    }
+
+    setIsLoadingAudio(true);
+    try {
+      const textToRead = aiSummary.replace(/[*#]/g, ''); // Strip markdown
+      const res = await fetch("/api/text-to-voice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: textToRead,
+          language: "en-IN",
+          speaker: "meera",
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.audio_base64) {
+        const audioSrc = `data:audio/wav;base64,${data.audio_base64}`;
+        const audio = new Audio(audioSrc);
+        audioRef.current = audio;
+
+        audio.onended = () => setIsPlaying(false);
+        audio.onerror = () => {
+          setIsPlaying(false);
+          console.error("Audio playback error");
+        };
+
+        await audio.play();
+        setIsPlaying(true);
+      }
+    } catch (err) {
+      console.error("TTS error:", err);
+    } finally {
+      setIsLoadingAudio(false);
+    }
+  };
 
   const govInCount = results.filter((r) => r.url?.includes(".gov.in")).length;
 
@@ -108,7 +201,7 @@ export default function SearchPage() {
             <span className="material-symbols-outlined">menu</span>
           </button>
           <div className="flex-1 max-w-2xl mx-auto w-full flex justify-center">
-            <SearchBar onSearch={handleSearch} isLoading={isLoading} />
+            <SearchBar onSearch={handleSearch} onStop={handleStopSearch} isLoading={isLoading} />
           </div>
         </header>
 
@@ -192,18 +285,64 @@ export default function SearchPage() {
                 <ReactMarkdown>{aiSummary}</ReactMarkdown>
               </div>
 
-              {/* Sources Trigger Button */}
+              {/* Sources Trigger Button & Listen Button */}
               <div className="mt-8 pt-6 border-t border-charcoal/10 flex items-center justify-between">
-                <span className="text-sm font-medium text-charcoal/60">
-                  Synthesized from verified sources
-                </span>
                 <button
-                  onClick={() => setIsPanelOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full border border-charcoal/20 text-charcoal font-semibold text-sm hover:bg-charcoal/5 transition-colors"
+                  onClick={handleListen}
+                  disabled={isLoadingAudio}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                    isPlaying
+                      ? "bg-primary text-background-dark"
+                      : isLoadingAudio
+                      ? "bg-charcoal/5 text-charcoal/30 cursor-wait"
+                      : "bg-primary/10 text-primary hover:bg-primary/20"
+                  }`}
+                  title={isPlaying ? "Stop listening" : "Listen to summary"}
                 >
-                  <span className="material-symbols-outlined text-sm">library_books</span>
-                  {resultCount} Sources
+                  <span className="material-symbols-outlined text-sm">
+                    {isPlaying ? "stop" : isLoadingAudio ? "hourglass_top" : "volume_up"}
+                  </span>
+                  {isPlaying ? "Stop" : isLoadingAudio ? "Loading..." : "Listen"}
                 </button>
+
+                <div className="flex items-center gap-4">
+                  <span className="hidden sm:inline text-sm font-medium text-charcoal/60">
+                    Synthesized from verified sources
+                  </span>
+                  <button
+                    onClick={() => setIsPanelOpen(true)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-full border border-charcoal/20 text-charcoal font-semibold text-sm hover:bg-charcoal/5 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-sm">library_books</span>
+                    {resultCount} Sources
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Follow-up Questions */}
+          {!isLoading && followUps.length > 0 && (
+            <div className="bg-white p-8 rounded-2xl border border-charcoal/10 shadow-sm space-y-4">
+              <h3 className="text-lg font-bold text-charcoal flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-xl">help</span>
+                Follow-up Questions
+              </h3>
+              <div className="flex flex-col gap-3">
+                {followUps.map((question, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleSearch(question)}
+                    className="flex items-center gap-3 text-left p-3 rounded-xl border border-charcoal/10 hover:border-primary/40 hover:bg-primary/5 transition-all group"
+                  >
+                    <span className="material-symbols-outlined text-charcoal/40 group-hover:text-primary transition-colors">
+                      add
+                    </span>
+                    <span className="font-medium text-charcoal/80 group-hover:text-charcoal transition-colors">
+                      {question}
+                    </span>
+                  </button>
+                ))}
               </div>
             </div>
           )}

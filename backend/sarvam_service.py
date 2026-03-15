@@ -158,12 +158,18 @@ CRITICAL FORMATTING RULES:
 2. Use inline citations like [1], [2] corresponding to the source numbers.
 3. PRIORITIZE information from .gov.in sources.
 4. Ensure the summary is highly informative and rich in factual detail.
+5. Include a "follow_ups" array containing 3 to 4 logical follow-up questions the user might want to ask next.
 
 Return your response as JSON with this exact structure:
 {
   "summary": "Your synthesized Markdown response...",
   "citations": [
     {"index": 1, "title": "Source title", "url": "https://...", "is_gov": true}
+  ],
+  "follow_ups": [
+    "Follow-up question 1?",
+    "Follow-up question 2?",
+    "Follow-up question 3?"
   ]
 }
 """
@@ -264,15 +270,17 @@ async def synthesize_response(
                 try:
                     result = json.loads(match.group(0))
                 except json.JSONDecodeError:
-                    result = {"summary": raw, "citations": []}
+                    result = {"summary": raw, "citations": [], "follow_ups": []}
             else:
-                result = {"summary": raw, "citations": []}
+                result = {"summary": raw, "citations": [], "follow_ups": []}
 
         # Validate structure
         if "summary" not in result:
             result["summary"] = raw  # Fallback to raw text
         if "citations" not in result:
             result["citations"] = []
+        if "follow_ups" not in result:
+            result["follow_ups"] = []
 
         return result
 
@@ -281,6 +289,7 @@ async def synthesize_response(
         return {
             "summary": f"An error occurred while generating the response: {str(e)}",
             "citations": [],
+            "follow_ups": [],
         }
 
 

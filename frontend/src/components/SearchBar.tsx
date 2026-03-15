@@ -4,11 +4,12 @@ import { useState, useRef, FormEvent, KeyboardEvent } from "react";
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
+  onStop?: () => void;
   isLoading?: boolean;
   initialQuery?: string;
 }
 
-export default function SearchBar({ onSearch, isLoading, initialQuery = "" }: SearchBarProps) {
+export default function SearchBar({ onSearch, onStop, isLoading, initialQuery = "" }: SearchBarProps) {
   const [query, setQuery] = useState(initialQuery);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -122,28 +123,41 @@ export default function SearchBar({ onSearch, isLoading, initialQuery = "" }: Se
         disabled={isLoading || isTranscribing}
       />
       <div className="absolute inset-y-0 right-4 flex items-center gap-2">
+        {isLoading && onStop ? (
+          <button
+            onClick={(e) => { e.preventDefault(); onStop(); }}
+            className="p-2 transition-all rounded-full text-red-500 hover:bg-red-50"
+            aria-label="Stop generating"
+            title="Stop generating"
+          >
+            <span className="material-symbols-outlined">square</span>
+          </button>
+        ) : (
+          <button
+            onClick={toggleRecording}
+            disabled={isLoading || isTranscribing}
+            className={`p-2 transition-all rounded-full ${
+              isRecording
+                ? "text-red-500 bg-red-50 animate-pulse"
+                : isTranscribing
+                ? "text-primary/50 cursor-wait"
+                : "text-charcoal/40 hover:text-primary hover:bg-primary/5"
+            }`}
+            aria-label={isRecording ? "Stop recording" : "Voice search"}
+            title={isRecording ? "Stop recording" : "Voice search"}
+          >
+            <span className="material-symbols-outlined">
+              {isRecording ? "stop_circle" : isTranscribing ? "hourglass_top" : "mic"}
+            </span>
+          </button>
+        )}
         <button
-          onClick={toggleRecording}
-          disabled={isLoading || isTranscribing}
-          className={`p-2 transition-all rounded-full ${
-            isRecording
-              ? "text-red-500 bg-red-50 animate-pulse"
-              : isTranscribing
-              ? "text-primary/50 cursor-wait"
-              : "text-charcoal/40 hover:text-primary hover:bg-primary/5"
-          }`}
-          aria-label={isRecording ? "Stop recording" : "Voice search"}
-          title={isRecording ? "Stop recording" : "Voice search"}
+          onClick={handleSubmit}
+          disabled={isLoading || isTranscribing || !query.trim()}
+          className="p-2 text-charcoal/40 hover:text-primary transition-colors disabled:opacity-50"
+          aria-label="Search"
         >
-          <span className="material-symbols-outlined">
-            {isRecording ? "stop_circle" : isTranscribing ? "hourglass_top" : "mic"}
-          </span>
-        </button>
-        <button
-          className="p-2 text-charcoal/40 hover:text-primary transition-colors"
-          aria-label="Upload file"
-        >
-          <span className="material-symbols-outlined">upload_file</span>
+          <span className="material-symbols-outlined">send</span>
         </button>
       </div>
     </div>
