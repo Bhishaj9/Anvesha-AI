@@ -14,6 +14,8 @@ interface SearchResult {
 }
 
 interface SearchResponse {
+  summary?: string;
+  citations?: any[];
   sutra?: {
     summary: string;
     citations: any[];
@@ -25,7 +27,7 @@ interface SearchResponse {
 
 export default function SearchPage() {
   const [results, setResults] = useState<SearchResult[]>([]);
-  const [summary, setSummary] = useState<string | null>(null);
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
@@ -35,7 +37,7 @@ export default function SearchPage() {
     setIsLoading(true);
     setError(null);
     setHasSearched(true);
-    setSummary(null);
+    setAiSummary(null);
 
     try {
       const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
@@ -44,32 +46,34 @@ export default function SearchPage() {
       if (data.error) {
         setError(data.error);
         setResults([]);
-        setSummary(null);
+        setAiSummary(null);
         setResultCount(0);
       } else {
         const searchResults = data.raw_results || data.results || [];
         setResults(searchResults);
         
-        let parsedSummary = data.sutra?.summary || null;
-        if (parsedSummary) {
+        let rawSummary = data.summary || data.sutra?.summary || null;
+        let parsedSummary = rawSummary;
+        if (rawSummary) {
           try {
             // If the backend returned a JSON string in summary, parse it
-            const parsed = JSON.parse(parsedSummary);
+            const parsed = JSON.parse(rawSummary);
             if (parsed && parsed.summary) {
               parsedSummary = parsed.summary;
             }
           } catch (e) {
             // It's a standard string, keep it as is
+            parsedSummary = rawSummary;
           }
         }
         
-        setSummary(parsedSummary);
+        setAiSummary(parsedSummary);
         setResultCount(searchResults.length);
       }
     } catch (err) {
       setError("Failed to connect to the search service. Please try again.");
       setResults([]);
-      setSummary(null);
+      setAiSummary(null);
       setResultCount(0);
       console.error("Search error:", err);
     } finally {
@@ -159,14 +163,14 @@ export default function SearchPage() {
           )}
 
           {/* Synthesis Summary */}
-          {!isLoading && summary && (
+          {!isLoading && aiSummary && (
             <div className="bg-white p-8 rounded-2xl border border-primary/20 shadow-sm mb-8">
               <h3 className="text-2xl font-bold text-charcoal mb-4 flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary">auto_awesome</span>
                 AI Synthesis
               </h3>
-              <div className="prose prose-charcoal prose-headings:font-bold max-w-none text-charcoal/80 leading-relaxed marker:text-primary">
-                <ReactMarkdown>{summary}</ReactMarkdown>
+              <div className="prose prose-primary max-w-none text-charcoal/80 leading-relaxed marker:text-primary">
+                <ReactMarkdown>{aiSummary}</ReactMarkdown>
               </div>
             </div>
           )}
