@@ -49,7 +49,21 @@ export default function SearchPage() {
       } else {
         const searchResults = data.raw_results || data.results || [];
         setResults(searchResults);
-        setSummary(data.sutra?.summary || null);
+        
+        let parsedSummary = data.sutra?.summary || null;
+        if (parsedSummary) {
+          try {
+            // If the backend returned a JSON string in summary, parse it
+            const parsed = JSON.parse(parsedSummary);
+            if (parsed && parsed.summary) {
+              parsedSummary = parsed.summary;
+            }
+          } catch (e) {
+            // It's a standard string, keep it as is
+          }
+        }
+        
+        setSummary(parsedSummary);
         setResultCount(searchResults.length);
       }
     } catch (err) {
@@ -151,7 +165,7 @@ export default function SearchPage() {
                 <span className="material-symbols-outlined text-primary">auto_awesome</span>
                 AI Synthesis
               </h3>
-              <div className="prose prose-charcoal max-w-none text-charcoal/80 leading-relaxed marker:text-primary">
+              <div className="prose prose-charcoal prose-headings:font-bold max-w-none text-charcoal/80 leading-relaxed marker:text-primary">
                 <ReactMarkdown>{summary}</ReactMarkdown>
               </div>
             </div>
