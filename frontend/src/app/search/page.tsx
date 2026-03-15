@@ -92,8 +92,10 @@ export default function SearchPage() {
             if (parsed && parsed.summary) {
               parsedSummary = parsed.summary;
             }
-            if (parsed && parsed.follow_ups) {
+            if (parsed && Array.isArray(parsed.follow_ups)) {
               parsedFollowUps = parsed.follow_ups;
+            } else if (parsed && parsed.sutra && Array.isArray(parsed.sutra.follow_ups)) {
+              parsedFollowUps = parsed.sutra.follow_ups;
             }
           } catch (e) {
             // It's a standard string, keep it as is
@@ -102,7 +104,7 @@ export default function SearchPage() {
         }
         
         setAiSummary(parsedSummary);
-        setFollowUps(parsedFollowUps);
+        setFollowUps(Array.isArray(parsedFollowUps) ? parsedFollowUps : []);
         setResultCount(searchResults.length);
       }
     } catch (err: any) {
@@ -142,7 +144,7 @@ export default function SearchPage() {
 
     setIsLoadingAudio(true);
     try {
-      const textToRead = aiSummary.replace(/[*#]/g, ''); // Strip markdown
+      const textToRead = aiSummary.replace(/[*#`_~>\[\]\(\)]/g, '').replace(/\n+/g, ' ').trim(); // Strip markdown deeply
       const res = await fetch("/api/text-to-voice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -154,6 +156,7 @@ export default function SearchPage() {
       });
 
       const data = await res.json();
+      console.log("Audio API Response:", data.audio_base64 ? `Received base64 audio (length: ${data.audio_base64.length})` : "No audio base64 received");
 
       if (data.audio_base64) {
         const audioSrc = `data:audio/wav;base64,${data.audio_base64}`;
@@ -161,13 +164,15 @@ export default function SearchPage() {
         audioRef.current = audio;
 
         audio.onended = () => setIsPlaying(false);
-        audio.onerror = () => {
+        audio.onerror = (e) => {
           setIsPlaying(false);
-          console.error("Audio playback error");
+          console.error("Audio playback error:", e);
         };
 
         await audio.play();
         setIsPlaying(true);
+      } else {
+        console.error("Audio API returned no audio_base64 field.");
       }
     } catch (err) {
       console.error("TTS error:", err);

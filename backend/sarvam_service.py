@@ -270,9 +270,9 @@ async def synthesize_response(
                 try:
                     result = json.loads(match.group(0))
                 except json.JSONDecodeError:
-                    result = {"summary": raw, "citations": [], "follow_ups": []}
+                    result = _fallback_sutra_extraction(raw)
             else:
-                result = {"summary": raw, "citations": [], "follow_ups": []}
+                result = _fallback_sutra_extraction(raw)
 
         # Validate structure
         if "summary" not in result:
@@ -291,6 +291,23 @@ async def synthesize_response(
             "citations": [],
             "follow_ups": [],
         }
+
+def _fallback_sutra_extraction(text: str) -> dict:
+    """Extracts summary and follow_ups robustly if JSON completely fails."""
+    # Look for questions near the end
+    questions = re.findall(r'(?:^|\n)\s*(?:-|\*|\d+\.)\s*([^\n]+\?)', text)
+    follow_ups = questions[-4:] if questions else []
+    
+    if not follow_ups:
+        sentences = re.findall(r'([A-Z][^\.!?]*\?)', text)
+        if sentences:
+            follow_ups = sentences[-4:]
+
+    return {
+        "summary": text,
+        "citations": [],
+        "follow_ups": follow_ups
+    }
 
 
 # ─────────────────────────────────────────────────────────────────
