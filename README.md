@@ -4,7 +4,7 @@ emoji: ⚡
 colorFrom: yellow
 colorTo: purple
 sdk: docker
-app_file: docker-compose.yml
+app_file: docker-compose.yaml
 app_port: 3000
 pinned: false
 ---
