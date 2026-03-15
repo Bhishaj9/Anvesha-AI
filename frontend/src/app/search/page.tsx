@@ -3,9 +3,9 @@
 import { useState, useCallback } from "react";
 import SearchSidebar from "@/components/SearchSidebar";
 import SearchBar from "@/components/SearchBar";
-import SutraCard from "@/components/SutraCard";
 import SuggestionPills from "@/components/SuggestionPills";
 import ReactMarkdown from "react-markdown";
+import SourcePanel from "@/components/SourcePanel";
 
 interface SearchResult {
   title: string;
@@ -32,6 +32,7 @@ export default function SearchPage() {
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [resultCount, setResultCount] = useState(0);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
 
   const handleSearch = useCallback(async (query: string) => {
     setIsLoading(true);
@@ -172,20 +173,24 @@ export default function SearchPage() {
               <div className="prose prose-primary max-w-none text-charcoal/80 leading-relaxed marker:text-primary">
                 <ReactMarkdown>{aiSummary}</ReactMarkdown>
               </div>
+
+              {/* Sources Trigger Button */}
+              <div className="mt-8 pt-6 border-t border-charcoal/10 flex items-center justify-between">
+                <span className="text-sm font-medium text-charcoal/60">
+                  Synthesized from verified sources
+                </span>
+                <button
+                  onClick={() => setIsPanelOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full border border-charcoal/20 text-charcoal font-semibold text-sm hover:bg-charcoal/5 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-sm">library_books</span>
+                  {resultCount} Sources
+                </button>
+              </div>
             </div>
           )}
 
-          {/* Results */}
-          {!isLoading &&
-            results.map((result, index) => (
-              <SutraCard
-                key={`${result.url}-${index}`}
-                title={result.title}
-                content={result.content}
-                url={result.url}
-                citationIndex={index + 1}
-              />
-            ))}
+          {/* We no longer render SutraCards here directly */}
         </section>
 
         {/* Suggestion Pills */}
@@ -193,6 +198,12 @@ export default function SearchPage() {
           <SuggestionPills onSuggestionClick={handleSearch} />
         )}
       </main>
+
+      <SourcePanel
+        isOpen={isPanelOpen}
+        onClose={() => setIsPanelOpen(false)}
+        results={results}
+      />
     </div>
   );
 }
