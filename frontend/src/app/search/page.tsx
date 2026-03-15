@@ -33,6 +33,7 @@ export default function SearchPage() {
   const [hasSearched, setHasSearched] = useState(false);
   const [resultCount, setResultCount] = useState(0);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const handleSearch = useCallback(async (query: string) => {
     setIsLoading(true);
@@ -86,12 +87,29 @@ export default function SearchPage() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background-light text-charcoal">
-      <SearchSidebar />
+      <div 
+        className={`transition-all duration-300 ease-in-out h-full ${
+          isSidebarOpen ? "w-64 opacity-100" : "w-0 opacity-0 overflow-hidden"
+        }`}
+      >
+        <div className="w-64 h-full">
+          <SearchSidebar />
+        </div>
+      </div>
 
       <main className="flex-1 flex flex-col min-w-0 relative overflow-y-auto">
         {/* Search Header */}
-        <header className="sticky top-0 z-10 p-6 md:px-12 flex flex-col items-center bg-background-light/80 backdrop-blur-md">
-          <SearchBar onSearch={handleSearch} isLoading={isLoading} />
+        <header className="sticky top-0 z-10 p-6 md:px-12 flex items-center gap-4 bg-background-light/80 backdrop-blur-md">
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="p-2 rounded-full hover:bg-charcoal/5 transition-colors text-charcoal/60 hover:text-charcoal flex-shrink-0"
+            title={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+          >
+            <span className="material-symbols-outlined">menu</span>
+          </button>
+          <div className="flex-1 max-w-2xl mx-auto w-full flex justify-center">
+            <SearchBar onSearch={handleSearch} isLoading={isLoading} />
+          </div>
         </header>
 
         {/* Results Section */}

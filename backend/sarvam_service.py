@@ -134,19 +134,19 @@ CRITICAL FORMATTING RULES:
    [A short 1-2 sentence introductory overview]
    
    **Core Vision**
-   [A brief paragraph explaining the main goals/pillars]
+   [A comprehensive 3-4 sentence paragraph explaining the main goals, pillars, and overarching vision. Include specific data points, dates, and names found in the results.]
    
    **Key Initiatives**
-   * [Bullet point 1]
+   * [Bullet point 1 detailing a specific initiative with metrics if available]
    * [Bullet point 2]
    * [Bullet point 3]
    
    **Achievements / Current Status**
-   [A brief paragraph with recent data, metrics, or updates]
+   [A highly informative 3-4 sentence paragraph highlighting recent data, metrics, milestones, and updates. Cite specific numbers and dates.]
 
 2. Use inline citations like [1], [2] corresponding to the source numbers.
 3. PRIORITIZE information from .gov.in sources.
-4. Keep the entire summary concise and scannable. Do not write a wall of text.
+4. Ensure the summary is highly informative and rich in factual detail.
 
 Return your response as JSON with this exact structure:
 {
