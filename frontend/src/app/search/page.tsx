@@ -5,6 +5,7 @@ import SearchSidebar from "@/components/SearchSidebar";
 import SearchBar from "@/components/SearchBar";
 import SutraCard from "@/components/SutraCard";
 import SuggestionPills from "@/components/SuggestionPills";
+import ReactMarkdown from "react-markdown";
 
 interface SearchResult {
   title: string;
@@ -13,12 +14,18 @@ interface SearchResult {
 }
 
 interface SearchResponse {
-  results?: SearchResult[];
+  sutra?: {
+    summary: string;
+    citations: any[];
+  };
+  raw_results?: SearchResult[];
+  results?: SearchResult[]; // fallback
   error?: string;
 }
 
 export default function SearchPage() {
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [summary, setSummary] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
@@ -28,6 +35,7 @@ export default function SearchPage() {
     setIsLoading(true);
     setError(null);
     setHasSearched(true);
+    setSummary(null);
 
     try {
       const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
@@ -36,15 +44,18 @@ export default function SearchPage() {
       if (data.error) {
         setError(data.error);
         setResults([]);
+        setSummary(null);
         setResultCount(0);
       } else {
-        const searchResults = data.results || [];
+        const searchResults = data.raw_results || data.results || [];
         setResults(searchResults);
+        setSummary(data.sutra?.summary || null);
         setResultCount(searchResults.length);
       }
     } catch (err) {
       setError("Failed to connect to the search service. Please try again.");
       setResults([]);
+      setSummary(null);
       setResultCount(0);
       console.error("Search error:", err);
     } finally {
@@ -130,6 +141,19 @@ export default function SearchPage() {
                 search_off
               </span>
               <p className="text-charcoal/50">No results found. Try a different query.</p>
+            </div>
+          )}
+
+          {/* Synthesis Summary */}
+          {!isLoading && summary && (
+            <div className="bg-white p-8 rounded-2xl border border-primary/20 shadow-sm mb-8">
+              <h3 className="text-2xl font-bold text-charcoal mb-4 flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">auto_awesome</span>
+                AI Synthesis
+              </h3>
+              <div className="prose prose-charcoal max-w-none text-charcoal/80 leading-relaxed marker:text-primary">
+                <ReactMarkdown>{summary}</ReactMarkdown>
+              </div>
             </div>
           )}
 

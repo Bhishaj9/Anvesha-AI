@@ -15,10 +15,12 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const backendUrl = `${BACKEND_URL}/search?q=${encodeURIComponent(q)}&region=${encodeURIComponent(region)}`;
+    const backendUrl = `${BACKEND_URL}/ask`;
     const response = await fetch(backendUrl, {
+      method: "POST",
       headers: { "Content-Type": "application/json" },
-      signal: AbortSignal.timeout(15000),
+      body: JSON.stringify({ query: q, region }),
+      signal: AbortSignal.timeout(60000), // ask might take longer
     });
 
     if (!response.ok) {

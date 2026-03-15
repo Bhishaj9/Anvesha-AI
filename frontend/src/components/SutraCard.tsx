@@ -80,7 +80,7 @@ export default function SutraCard({
         <h3 className="text-2xl font-bold text-charcoal leading-tight">
           {title}
         </h3>
-        <p className="text-charcoal/60 line-clamp-2 leading-relaxed">
+        <p className="text-charcoal/60 line-clamp-4 leading-relaxed">
           {content}
         </p>
 
