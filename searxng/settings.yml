@@ -18,3 +18,9 @@ server:
 
 outgoing:
   request_timeout: 10.0
+
+engines:
+  - name: ahmia
+    disabled: true
+  - name: torch
+    disabled: true
