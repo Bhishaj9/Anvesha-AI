@@ -26,11 +26,12 @@ app = FastAPI(
     version="0.4.0",
 )
 
-# CORS: allow frontend dev server
+# CORS: allow frontend (wildcard for HF Spaces, specific URL for local dev)
+_origins = ["*"] if settings.FRONTEND_URL == "*" else [settings.FRONTEND_URL]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_URL],
-    allow_credentials=True,
+    allow_origins=_origins,
+    allow_credentials=False if settings.FRONTEND_URL == "*" else True,
     allow_methods=["*"],
     allow_headers=["*"],
 )

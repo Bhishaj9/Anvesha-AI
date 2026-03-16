@@ -15,12 +15,12 @@ class Settings(BaseSettings):
     SARVAM_SYNTH_MODEL: str = "sarvam-105b"
 
     # ── SearxNG ────────────────────────────────────────────────
-    SEARXNG_BASE_URL: str = "http://localhost:8080"
+    SEARXNG_BASE_URL: str = "http://localhost:8888"
     SEARCH_REGION_DEFAULT: str = "in-en"
     SEARCH_LANG_DEFAULT: str = "en"
 
     # ── Frontend ───────────────────────────────────────────────
-    FRONTEND_URL: str = "http://localhost:3000"
+    FRONTEND_URL: str = "*"
 
     model_config = {
         "env_file": ".env",

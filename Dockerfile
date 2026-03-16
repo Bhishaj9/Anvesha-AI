@@ -64,8 +64,10 @@ USER 1000
 
 # Set Environment Variables
 ENV SEARXNG_SETTINGS_PATH=/app/searxng/settings.yml
-ENV SEARXNG_BASE_URL=http://localhost:8888/
+ENV SEARXNG_BASE_URL=http://localhost:8888
 ENV BACKEND_URL=http://localhost:8000
+ENV FRONTEND_URL=*
+ENV SARVAM_API_KEY=""
 ENV PORT=3000
 
 EXPOSE 3000 8000 8888
