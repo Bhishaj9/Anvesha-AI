@@ -159,6 +159,7 @@ CRITICAL FORMATTING RULES:
 3. PRIORITIZE information from .gov.in sources.
 4. Ensure the summary is highly informative and rich in factual detail.
 5. Include a "follow_ups" array containing 3 to 4 logical follow-up questions the user might want to ask next.
+6. DO NOT use Markdown headers like Core Vision as JSON keys. Your response must be VALID JSON. Every section header must be part of the Markdown text INSIDE the "summary" string value.
 
 Return your response as JSON with this exact structure:
 {

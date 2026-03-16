@@ -159,7 +159,9 @@ export default function SearchPage() {
       console.log("Audio API Response:", data.audio_base64 ? `Received base64 audio (length: ${data.audio_base64.length})` : "No audio base64 received");
 
       if (data.audio_base64) {
-        const audioSrc = `data:audio/wav;base64,${data.audio_base64}`;
+        const audioSrc = data.audio_base64.startsWith("data:") 
+          ? data.audio_base64 
+          : `data:audio/wav;base64,${data.audio_base64}`;
         const audio = new Audio(audioSrc);
         audioRef.current = audio;
 
@@ -169,8 +171,12 @@ export default function SearchPage() {
           console.error("Audio playback error:", e);
         };
 
-        await audio.play();
-        setIsPlaying(true);
+        audio.play().then(() => {
+          setIsPlaying(true);
+        }).catch(e => {
+          setIsPlaying(false);
+          console.error("Play blocked:", e);
+        });
       } else {
         console.error("Audio API returned no audio_base64 field.");
       }
@@ -334,18 +340,14 @@ export default function SearchPage() {
                 Follow-up Questions
               </h3>
               <div className="flex flex-col gap-3">
-                {followUps.map((question, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleSearch(question)}
-                    className="flex items-center gap-3 text-left p-3 rounded-xl border border-charcoal/10 hover:border-primary/40 hover:bg-primary/5 transition-all group"
+                {followUps.map((q, i) => (
+                  <button 
+                    key={i} 
+                    onClick={() => handleSearch(q)} 
+                    className="flex items-center gap-2 text-left px-3 py-2 rounded-xl hover:bg-primary/5 text-primary text-sm font-medium transition-colors group"
                   >
-                    <span className="material-symbols-outlined text-charcoal/40 group-hover:text-primary transition-colors">
-                      add
-                    </span>
-                    <span className="font-medium text-charcoal/80 group-hover:text-charcoal transition-colors">
-                      {question}
-                    </span>
+                    <span className="material-symbols-outlined text-xs text-primary/40 group-hover:text-primary">add</span>
+                    {q}
                   </button>
                 ))}
               </div>
