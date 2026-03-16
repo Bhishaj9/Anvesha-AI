@@ -48,6 +48,7 @@ COPY --from=frontend-builder /app/.next/static /app/frontend/.next/static
 # Copy SearxNG Settings
 RUN mkdir -p /app/searxng
 COPY searxng/settings.yml /app/searxng/settings.yml
+COPY searxng/limiter.toml /app/searxng/limiter.toml
 
 # Copy Supervisord Configuration
 COPY supervisord.conf /app/supervisord.conf
@@ -57,7 +58,7 @@ COPY supervisord.conf /app/supervisord.conf
 RUN mkdir -p /var/log/supervisor /var/run /app/searxng-data \
     && useradd -m -u 1000 hfuser \
     && chown -R 1000:1000 /app /var/log/supervisor /var/run /usr/local/searxng /app/searxng-data \
-    && chmod -R 777 /app /var/log/supervisor /var/run /usr/local/searxng /app/searxng-data
+    && chmod -R 777 /app /var/log/supervisor /var/run /usr/local/searxng /app/searxng-data /app/searxng
 
 USER 1000
 
