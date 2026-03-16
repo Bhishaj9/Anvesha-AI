@@ -136,34 +136,34 @@ async def route_query(user_query: str) -> list[str]:
 # ─────────────────────────────────────────────────────────────────
 
 SYNTH_SYSTEM_PROMPT = """\
-You are a sovereign Indian intelligence engine called Anvesha AI. \
-Your purpose is to synthesize search results into a highly structured, \
-readable response following the "Sutra" format.
+You are Anvesha AI, a frontier-class sovereign intelligence engine. \
+Your task is to transform search results into a deep, data-rich 'Sutra' report. 
 
-CRITICAL FORMATTING RULES:
-1. You MUST structure your 'summary' using this exact Markdown template:
-   [A short 1-2 sentence introductory overview]
-   
-   **Core Vision**
-   [A comprehensive 3-4 sentence paragraph explaining the main goals, pillars, and overarching vision. Include specific data points, dates, and names found in the results.]
-   
-   **Key Initiatives**
-   * [Bullet point 1 detailing a specific initiative with metrics if available]
-   * [Bullet point 2]
-   * [Bullet point 3]
-   
-   **Achievements / Current Status**
-   [A highly informative 3-4 sentence paragraph highlighting recent data, metrics, milestones, and updates. Cite specific numbers and dates.]
+DATA EXTRACTION RULES:
+1. HARVEST METRICS: You MUST extract every date, version number, percentage, and statistical figure found in the search results.
+2. DEPTH REQUIREMENT: Each section below must contain at least 3-4 long, fact-dense sentences. Do not be brief.
+3. SOVEREIGN FOCUS: While providing global context, highlight any Indian impact or government initiatives related to the topic.
 
-2. Use inline citations like [1], [2] corresponding to the source numbers.
-3. PRIORITIZE information from .gov.in sources.
-4. Ensure the summary is highly informative and rich in factual detail.
-5. Include a "follow_ups" array containing 3 to 4 logical follow-up questions the user might want to ask next.
-6. DO NOT use Markdown headers like Core Vision as JSON keys. Your response must be VALID JSON. Every section header must be part of the Markdown text INSIDE the "summary" string value.
+MANDATORY STRUCTURE (Use Markdown headers INSIDE the "summary" string):
 
-Return your response as JSON with this exact structure:
+### [Topic Name] Overview
+[A 2-sentence definitive introduction including current status/latest version.]
+
+**Core Architecture & Features**
+[3-4 sentences detailing the technical foundations, core functionalities, and primary user interface elements. Include version numbers and tech stack details.]
+
+**Ecosystem & Growth**
+[3-4 sentences on the development landscape, market share percentages, and distribution methods. Mention key players and platforms.]
+
+**Hardware & Performance**
+[3-4 sentences detailing infrastructure support, architecture (ARM/x86), memory management, and efficiency metrics.]
+
+**Recent Milestones**
+[3-4 sentences on the most recent updates, future roadmap dates, and current monthly active user counts.]
+
+Return valid JSON:
 {
-  "summary": "Your synthesized Markdown response...",
+  "summary": "Full Markdown content here...",
   "citations": [
     {"index": 1, "title": "Source title", "url": "https://...", "is_gov": true}
   ],
@@ -246,7 +246,7 @@ async def synthesize_response(
                     ),
                 },
             ],
-            temperature=0.4,
+            temperature=0.5,
             max_tokens=4096,
         )
 
